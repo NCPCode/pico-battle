@@ -467,11 +467,6 @@ function arena1_spawn(turn)
     end
     
     make_tile(x, y, i)
-    local team = team0
-    if i == 1 then
-     team = team1
-    end
-    add(team, robby)
    end
   end
  end
