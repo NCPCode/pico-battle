@@ -6,13 +6,8 @@ __lua__
 function update0(x, y)
  robot = {
   dirc = 1,
-  instr = 1,
+  instr = 2,
  }
- 
- if wget(x + 1, y) == 1 then
-  robot.instr = 0
- end
- 
  return robot
 end
 -->8
@@ -24,11 +19,11 @@ function update1(x, y)
   instr = 1,
  }
  
- if wget(x - 1, y) == 0 then
+ if wget(x - 1, y) == 0
+  or wget(x - 1, y - 1) == 0
+  then
+  
   robot.instr = 0
-  debug = hget(x - 1, y)
- else
-  debug = nil
  end
  
  return robot
@@ -169,7 +164,7 @@ function _init()
  arena = {
  	init = arena1_init,
   spawn = arena1_spawn,
-  length = 100,
+  length = 1000,
  	winner = most_bots_wins
  }
  
@@ -182,6 +177,9 @@ function _init()
  team0 = {}
  team1 = {}
 	
+	c0 = { 13, 12, 1 }
+ c1 = { 8, 14, 6 }
+	
 	arena.init()
 	debug = nil
 end
@@ -190,6 +188,7 @@ function make_robot(x, y)
  local robot = {}
  robot.x = x
  robot.y = y
+ robot.hp = 8
  robot.data = {
   instr = -1,
   dirc = -1,
@@ -200,10 +199,16 @@ end
 
 function make_tile(x, y, group)
  if group == 0 then
- 	sset(x, y, 11)
+ 	sset(x, y, c0[1])
+ 	sset(x + 1, y, c0[1])
+ 	sset(x, y + 1, c0[1])
+ 	sset(x + 1, y + 1, c0[1])
   add(team0, make_robot(x, y))
  elseif group == 1 then
- 	sset(x, y, 4)
+ 	sset(x, y, c1[1])
+ 	sset(x + 1, y, c1[1])
+ 	sset(x, y + 1, c1[1])
+ 	sset(x + 1, y + 1, c1[1])
  	add(team1, make_robot(x, y))
  elseif group == 2 then
   sset(x, y, 7)
@@ -221,9 +226,6 @@ function el(x, tab)
 	
 	return false
 end
-
-local c0 = { 11, 3, 2, 1, 13, 6, 15 }
-local c1 = { 4, 5, 8, 14, 9, 10, 12 }
 
 function wget(x, y)
  local raw = sget(x, y)
@@ -262,14 +264,53 @@ function adjust(core, team)
  	 hit(vx, vy)
  	end
  elseif robot.instr == 1 then
-  if wget(vx, vy) == 3 then
-   local old = sget(core.x, core.y)
-   sset(core.x, core.y, 0)
-   core.x = vx
-   core.y = vy
-   sset(vx, vy, old)
+  if robot.dirc == 0 then
+   if wget(vx, vy) != 3 
+    or wget(vx, vy+1) != 3 then
+    return
+   end
+   move(core.x, core.y, -1, 0)
+   move(core.x, core.y+1, -1, 0)
+   move(core.x+1, core.y+1, -1, 0)
+   move(core.x+1, core.y, -1, 0)
+  elseif robot.dirc == 1 then
+   if wget(vx+1, vy) != 3
+    or wget(vx+1, vy+1) != 3 then
+    return
+   end
+   move(core.x+1, core.y, 1, 0)
+   move(core.x+1, core.y+1, 1, 0)
+   move(core.x, core.y+1, 1, 0)
+   move(core.x, core.y, 1, 0)
+  elseif robot.dirc == 2 then
+   if wget(vx, vy) != 3 
+    or wget(vx+1, vy) != 3 then
+    return
+   end
+   move(core.x, core.y, 0, -1)
+   move(core.x+1, core.y, 0, -1)
+   move(core.x+1, core.y+1, 0, -1)
+   move(core.x, core.y+1, 0, -1)
+  elseif robot.dirc == 3 then
+   if wget(vx, vy+1) != 3 
+    or wget(vx+1, vy+1) != 3 then
+    return
+   end
+   move(core.x, core.y+1, 0, 1)
+   move(core.x+1, core.y+1, 0, 1)
+   move(core.x, core.y, 0, 1)
+   move(core.x+1, core.y, 0, 1)
   end
+  
+  core.x = vx
+  core.y = vy
  end
+end
+
+function move(x, y, dirx, diry)
+ local old = sget(x, y)
+ sset(x, y, 0)
+ sset(x + dirx, y + diry, old)
 end
 
 function hget(x, y)
@@ -277,25 +318,32 @@ function hget(x, y)
   return nil
  end
  
- local current = sget(x, y)
- local tab = c0
+ local team = team0
  if wget(x, y) == 1 then
-  tab = c1
+  team = team1
  end
- for i=1,7 do 
-  if tab[i] == current then
-   return 8 - i
-  end
+ 
+ for r in all(team) do
+  if in_robot(r.x, r.y, x, y) then
+   return r.hp
+  end 
  end
+ return nil
+end
+
+function in_robot(rx, ry, x, y)
+ return 
+  (rx == x and ry == y) or
+  (rx+1 == x and ry == y) or
+  (rx+1 == x and ry+1 == y) or
+  (rx == x and ry+1 == y)
 end
 
 function hit(x, y)
- if wget(x, y) != 0 and 
-  wget(x, y) != 1 then 
+ if wget(x, y) >= 2 then
   return
  end  
  
- local index = 0
  local tab = c0
  local team = team0
  if wget(x, y) == 1 then
@@ -305,27 +353,35 @@ function hit(x, y)
  
  local rob = nil
  for robby in all(team) do
-  if robby.x == x and
-   robby.y == y then
+  if in_robot(robby.x, 
+   robby.y, x, y) then
    
    rob = robby
    break
   end
  end
   
- local current = sget(x, y)
- for i=1,7 do 
-  if tab[i] == current then
-   index = i
-   break
-  end
- end
- 
- if index == 7 then
-  sset(x, y, 0)
+ rob.hp -= 1
+ if rob.hp <= 0 then
+  sset(rob.x, rob.y, 0)
+  sset(rob.x+1, rob.y, 0)
+  sset(rob.x+1, rob.y+1, 0)
+  sset(rob.x, rob.y+1, 0)
   del(team, rob)
- else 
-  sset(x, y, tab[index + 1])
+ else
+  local p = rob.hp % 4
+  local col =  sget(rob.x+(p%2), 
+   rob.y+flr(p/2))
+  for c=1, #tab do
+   if tab[c] == col then
+    col = c
+    break
+   end
+  end
+  
+  sset(rob.x + (p%2), 
+   rob.y + flr(p/2), 
+   tab[col+1])
  end
 end
 
@@ -398,78 +454,23 @@ end
 
 -- don't touch!
 
-function set_line(x, s, f, c)
- for y=s,f do
-  sset(x, y, c)
- end
-end
-
-function cprog_bottom()
- set_line(0, 121, 127, 11)
- set_line(1, 121, 127, 3)
- set_line(2, 121, 127, 2)
- set_line(3, 121, 127, 1)
- set_line(4, 121, 127, 13)
- set_line(5, 121, 127, 6)
- set_line(6, 121, 127, 15)
- 
- set_line(121, 121, 127, 4)
- set_line(122, 121, 127, 5)
- set_line(123, 121, 127, 8)
- set_line(124, 121, 127, 14)
- set_line(125, 121, 127, 9)
- set_line(126, 121, 127, 10)
- set_line(127, 121, 127, 12)
-end
-
 function arena1_init()
 	for x=0, 127 do
 	 make_tile(x, 0, 2)
-	 make_tile(x, 120, 2)
+	 make_tile(x, 127, 2)
 	end
  
- for y=0, 120 do
+ for y=0, 127 do
   make_tile(0, y, 2)
   make_tile(127, y, 2)
  end
  
- make_tile(10, 10, 0)
- make_tile(15, 10, 1)
- 
- for y=15, 90 do
-  make_tile(45, y, 2)
- end
- 
- cprog_bottom()
+ make_tile(10, 64, 0)
+ make_tile(50, 64, 1)
 end
 
 function arena1_spawn(turn)
- if turn % 10 != 0 or turn == 0 then
-  return
- end
-
- local quant = flr(rnd(5))
- for i=0, 1 do
-  for counter=1, quant do
-   local x = 1 + flr(rnd(63)) + 63*i
-   local y = flr(rnd(119)) + 1
-   
-   if wget(x, y) == 2 then
-    counter -= 1
-    -- no continues :(
-   else
-    local robby = make_robot(x, y)
-    
-    if wget(x, y) < 2 then
-     for count=1, hget(x, y) do
-      hit(x, y)
-     end
-    end
-    
-    make_tile(x, y, i)
-   end
-  end
- end
+ 
 end
 
 function most_bots_wins()
@@ -481,6 +482,11 @@ function most_bots_wins()
   return "tie game."
  end
 end
+__gfx__
+88ee6600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+88ee6600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11ccdd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11ccdd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 88888eeeeee888eeeeee888eeeeee888777777888888888888888888888888888888888888888888888ff8ff8888228822888222822888888822888888228888
