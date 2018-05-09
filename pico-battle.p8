@@ -9,7 +9,6 @@ function update0(x, y)
   instr = "move",
  }
  
- 
  return robot
 end
 -->8
@@ -20,13 +19,6 @@ function update1(x, y)
   dirc = "left",
   instr = "move",
  }
- 
- if wget(x - 1, y) == 0
-  or wget(x - 1, y - 1) == 0
-  then
-  
-  robot.instr = "attack"
- end
  
  return robot
 end
@@ -252,10 +244,16 @@ function adjust(core, team)
   vx -= 1
  elseif robot.dirc == "right" then
   vx += 1
+  if robot.instr == "attack" then
+   vx += 1
+  end
  elseif robot.dirc == "up" then
   vy -= 1
  elseif robot.dirc == "down" then
   vy += 1
+  if robot.instr == "attack" then
+   vy += 1
+  end
  end
  
  if robot.instr == "attack" then
@@ -448,6 +446,30 @@ function _draw()
 	 print(debug)
 	end
 end
+
+function get_bots(team)
+ if team == 0 then
+  list = {}
+  for rob in all(team0) do
+   robby = {
+    x = rob.x,
+    y = rob.y,
+   }
+   add(list, robby)
+  end
+  return list
+ elseif team == 1 then
+  list = {}
+  for robby in all(team1) do
+   rob = {
+    x = robby.x,
+    y = robby.y,
+   }
+   add(list, rob)
+  end
+  return list
+ end
+end
 -->8
 -- arena data
 
@@ -471,7 +493,7 @@ function arena1_init()
 end
 
 function arena1_spawn(turn)
- if need_spawn0 > 0 then
+if need_spawn0 > 0 then
   x = flr(rnd(128))
   y = flr(rnd(128))
   if wget(x, y) == 3 and
