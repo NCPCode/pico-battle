@@ -5,9 +5,11 @@ __lua__
 
 function update0(x, y)
  robot = {
-  dirc = 1,
-  instr = 2,
+  dirc = "right",
+  instr = "move",
  }
+ 
+ 
  return robot
 end
 -->8
@@ -15,15 +17,15 @@ end
 
 function update1(x, y)
  robot = {
-  dirc = 0,
-  instr = 1,
+  dirc = "left",
+  instr = "move",
  }
  
  if wget(x - 1, y) == 0
   or wget(x - 1, y - 1) == 0
   then
   
-  robot.instr = 0
+  robot.instr = "attack"
  end
  
  return robot
@@ -134,14 +136,11 @@ end
  have robots
  robots have instr and dirc.
  instr is either 0, 1 or 2
- if it's 0, robot will attack
- if it's 1, robot will move
- if it's 2, robot will wait
+ if it's "attack", robot will attack
+ if it's "move", robot will move
+ if it's "wait", robot will wait
  dirc stores direction to act
- 0 -> left
- 1 -> right
- 2 -> up
- 3 -> down
+ left, right, up, dowm
 --]]
 
 --[[ 
@@ -164,7 +163,7 @@ function _init()
  arena = {
  	init = arena1_init,
   spawn = arena1_spawn,
-  length = 1000,
+  length = 100,
  	winner = most_bots_wins
  }
  
@@ -249,22 +248,22 @@ function adjust(core, team)
  local vx = core.x
  local vy = core.y
  local robot = core.data
- if robot.dirc == 0 then
+ if robot.dirc == "left" then
   vx -= 1
- elseif robot.dirc == 1 then
+ elseif robot.dirc == "right" then
   vx += 1
- elseif robot.dirc == 2 then
+ elseif robot.dirc == "up" then
   vy -= 1
- elseif robot.dirc == 3 then
+ elseif robot.dirc == "down" then
   vy += 1
  end
  
- if robot.instr == 0 then
+ if robot.instr == "attack" then
  	if wget(vx, vy) == oteam then
  	 hit(vx, vy)
  	end
- elseif robot.instr == 1 then
-  if robot.dirc == 0 then
+ elseif robot.instr == "move" then
+  if robot.dirc == "left" then
    if wget(vx, vy) != 3 
     or wget(vx, vy+1) != 3 then
     return
@@ -273,7 +272,7 @@ function adjust(core, team)
    move(core.x, core.y+1, -1, 0)
    move(core.x+1, core.y+1, -1, 0)
    move(core.x+1, core.y, -1, 0)
-  elseif robot.dirc == 1 then
+  elseif robot.dirc == "right" then
    if wget(vx+1, vy) != 3
     or wget(vx+1, vy+1) != 3 then
     return
@@ -282,7 +281,7 @@ function adjust(core, team)
    move(core.x+1, core.y+1, 1, 0)
    move(core.x, core.y+1, 1, 0)
    move(core.x, core.y, 1, 0)
-  elseif robot.dirc == 2 then
+  elseif robot.dirc == "up" then
    if wget(vx, vy) != 3 
     or wget(vx+1, vy) != 3 then
     return
@@ -291,7 +290,7 @@ function adjust(core, team)
    move(core.x+1, core.y, 0, -1)
    move(core.x+1, core.y+1, 0, -1)
    move(core.x, core.y+1, 0, -1)
-  elseif robot.dirc == 3 then
+  elseif robot.dirc == "down" then
    if wget(vx, vy+1) != 3 
     or wget(vx+1, vy+1) != 3 then
     return
@@ -452,7 +451,7 @@ end
 -->8
 -- arena data
 
--- don't touch!
+-- warning: do not touch!
 
 function arena1_init()
 	for x=0, 127 do
@@ -467,10 +466,39 @@ function arena1_init()
  
  make_tile(10, 64, 0)
  make_tile(50, 64, 1)
+ need_spawn0 = 0
+ need_spawn1 = 0
 end
 
 function arena1_spawn(turn)
+ if need_spawn0 > 0 then
+  x = flr(rnd(128))
+  y = flr(rnd(128))
+  if wget(x, y) == 3 and
+     wget(x+1, y) == 3 and
+     wget(x, y+1) == 3 and
+     wget(x+1, y+1) == 3 then
+   make_tile(x, y, 0)
+  end
+  need_spawn0 -= 1
+ end
  
+ if need_spawn1 > 0 then
+  x = flr(rnd(128))
+  y = flr(rnd(128))
+  if wget(x, y) == 3 and
+     wget(x+1, y) == 3 and
+     wget(x, y+1) == 3 and
+     wget(x+1, y+1) == 3 then
+   make_tile(x, y, 1)
+  end
+  need_spawn1 -= 1
+ end
+ 
+ if turn % 10 == 0 then
+  need_spawn0 += 1
+  need_spawn1 += 1
+ end
 end
 
 function most_bots_wins()
