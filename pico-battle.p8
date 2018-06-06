@@ -257,9 +257,33 @@ function adjust(core, team)
  end
  
  if robot.instr == "attack" then
- 	if wget(vx, vy) == oteam then
- 	 hit(vx, vy)
- 	end
+ 	if robot.dirc == "left" then
+   if wget(vx, vy) == oteam then
+    hit(vx, vy)
+   elseif wget(vx, vy+1) == oteam then
+    hit(vx, vy+1)
+   end
+  elseif robot.dirc == "right" then
+   vx += 1
+   if wget(vx, vy) == oteam then
+    hit(vx, vy)
+   elseif wget(vx, vy+1) == oteam then
+    hit(vx, vy+1)
+   end
+  elseif robot.dirc == "up" then
+   if wget(vx, vy) == oteam then
+    hit(vx, vy)
+   elseif wget(vx+1, vy) == oteam then
+    hit(vx+1, vy)
+   end
+  elseif robot.dirc == "down" then
+   vy += 1
+   if wget(vx, vy) == oteam then
+    hit(vx, vy)
+   elseif wget(vx+1, vy) == oteam then
+    hit(vx+1, vy)
+   end
+  end 
  elseif robot.instr == "move" then
   if robot.dirc == "left" then
    if wget(vx, vy) != 3 
@@ -411,6 +435,7 @@ function _update()
  
  arena.spawn(turn_number)
  
+if turn_number%2 == 0 then
  for rob in all(team0) do
   rob.data = update0(rob.x, rob.y)
   adjust(rob, 0)
@@ -420,6 +445,19 @@ function _update()
   rob.data = update1(rob.x, rob.y)
   adjust(rob, 1)
  end
+ debug = "0"
+else
+	for rob in all(team1) do
+  rob.data = update1(rob.x, rob.y)
+  adjust(rob, 1)
+ end
+ 
+ for rob in all(team0) do
+  rob.data = update0(rob.x, rob.y)
+  adjust(rob, 0)
+  debug = "1"
+ end
+end
  
  turn_number += 1
 end
@@ -431,8 +469,9 @@ function _draw()
 	 if win_msg then
 	  return
 	 end
-	 print("game finished!", 60, 60)
-	 print(arena.winner(), 60, 66)
+	 local fin ="game finished!"
+	 print("game finished!",64-#fin*2, 60)
+	 print(arena.winner(),64-#arena.winner()*2, 66)
 	 win_msg = true
 	 return
 	end
@@ -486,16 +525,16 @@ function arena1_init()
   make_tile(127, y, 2)
  end
  
- make_tile(10, 64, 0)
- make_tile(50, 64, 1)
+ make_tile(28, 64, 0)
+ make_tile(100, 64, 1)
  need_spawn0 = 0
  need_spawn1 = 0
 end
 
 function arena1_spawn(turn)
-if need_spawn0 > 0 then
-  x = flr(rnd(128))
-  y = flr(rnd(128))
+ if need_spawn0 > 0 then
+  x = 28
+  y = 64
   if wget(x, y) == 3 and
      wget(x+1, y) == 3 and
      wget(x, y+1) == 3 and
@@ -506,8 +545,8 @@ if need_spawn0 > 0 then
  end
  
  if need_spawn1 > 0 then
-  x = flr(rnd(128))
-  y = flr(rnd(128))
+  x = 100
+  y = 64
   if wget(x, y) == 3 and
      wget(x+1, y) == 3 and
      wget(x, y+1) == 3 and
@@ -667,3 +706,5 @@ __label__
 82228222828282228888822282888222822288888888888888888888888888888888888888888888888888888888822282228288822282228882822288822288
 88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 
+__sfx__
+000100000000001050020500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
