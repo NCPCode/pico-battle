@@ -5,8 +5,8 @@ __lua__
 
 function update0(x, y)
  robot = {
+  dirc = "right",
   instr = "move",
-  dirc = "down",
  }
  
  return robot
@@ -244,10 +244,16 @@ function adjust(core, team)
   vx -= 1
  elseif robot.dirc == "right" then
   vx += 1
+  if robot.instr == "attack" then
+   vx += 1
+  end
  elseif robot.dirc == "up" then
   vy -= 1
  elseif robot.dirc == "down" then
   vy += 1
+  if robot.instr == "attack" then
+   vy += 1
+  end
  end
  
  if robot.instr == "attack" then
